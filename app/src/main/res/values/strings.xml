@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">YandexMapKit</string>
+    <string name="api_key">2d83dc33-57bf-49f4-b10e-ebad1fe53974</string>
+    <string name="up_triangle">▲</string>
+    <string name="down_triangle">▼</string>
+
+    <string name="not_found_error_message">Not found</string>
+    <string name="network_error_message">Network error</string>
+    <string name="remote_error_message">Remote server error</string>
+    <string name="unknown_error_message">Unknown error</string>
+</resources>

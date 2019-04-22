@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="long_tap_items">
+        <item>Отсюда</item>
+        <item>Сюда</item>
+        <item>Отмена</item>
+    </array>
+</resources>
