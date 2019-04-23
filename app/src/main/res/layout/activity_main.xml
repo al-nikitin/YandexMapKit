@@ -20,7 +20,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="#EEFFFF"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -149,6 +150,13 @@
                 android:layout_height="wrap_content"
                 android:visibility="gone"
                 android:text="Построить марштрут"/>
+
+            <Button
+                android:id="@+id/button_clear_route"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:text="Удалить марштрут"/>
         </LinearLayout>
 
         <FrameLayout
@@ -163,7 +171,7 @@
                 android:layout_height="wrap_content"
                 android:background="@color/colorPrimary"
                 android:textAlignment="center"
-                android:text="@string/up_triangle"/>
+                android:text="@string/down_triangle"/>
         </FrameLayout>
     </LinearLayout>
 

@@ -25,6 +25,7 @@ import com.yandex.mapkit.map.InputListener;
 import com.yandex.mapkit.map.Map;
 import com.yandex.mapkit.map.MapObjectCollection;
 import com.yandex.mapkit.map.PlacemarkMapObject;
+import com.yandex.mapkit.map.PolylineMapObject;
 import com.yandex.mapkit.mapview.MapView;
 import com.yandex.runtime.Error;
 import com.yandex.runtime.image.ImageProvider;
@@ -39,16 +40,19 @@ public class MainActivity extends AppCompatActivity implements LongTapDialog.Lon
     private MapView mapView;
     private TextView routePanelCollapser;
     private TextView tvLatA, tvLonA, tvLatB, tvLonB;
-    private Button buttonBuildRoute;
+    private Button buttonBuildRoute, buttonClearRoute;
     private LinearLayout routePanel;
     private Point TARGET_LOCATION = new Point(55.751574, 37.573856);
     private Map map;
     private InputListener inputListener;
-    private boolean panelIsCollapsed = false;
+    private boolean panelIsCollapsed = true;
+    private boolean routeIsBuilt = false;
     private double latA, lonA, latB, lonB, latCurrent, lonCurrent;
     private MapObjectCollection mapObjects;
     private DrivingRouter drivingRouter;
     private DrivingSession drivingSession;
+    private PlacemarkMapObject markA, markB;
+    private PolylineMapObject route;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,8 +70,7 @@ public class MainActivity extends AppCompatActivity implements LongTapDialog.Lon
         tvLatB = (TextView) findViewById(R.id.lat_b);
         tvLonB = (TextView) findViewById(R.id.lon_b);
         buttonBuildRoute = (Button) findViewById(R.id.button_build_route);
-
-        collapsePanel();
+        buttonClearRoute = (Button) findViewById(R.id.button_clear_route);
 
         buttonBuildRoute.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -76,32 +79,49 @@ public class MainActivity extends AppCompatActivity implements LongTapDialog.Lon
             }
         });
 
-        routePanelCollapser.setOnClickListener(new View.OnClickListener() {
+        buttonClearRoute.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                panelIsCollapsed = !panelIsCollapsed;
+                mapObjects.clear();
+                tvLatA.setText("");
+                tvLatB.setText("");
+                tvLonA.setText("");
+                tvLonB.setText("");
+                markA = null;
+                markB = null;
+                buttonClearRoute.setVisibility(View.GONE);
+                routeIsBuilt = false;
+                panelIsCollapsed = true;
                 collapsePanel();
             }
         });
 
+        routePanelCollapser.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                panelIsCollapsed = !panelIsCollapsed;
+                if (panelIsCollapsed) {
+                    openPanel();
+                } else collapsePanel();
+            }
+        });
+
         map = mapView.getMap();
-        mapObjects = map.getMapObjects().addCollection();
+        mapObjects = map.getMapObjects();
         inputListener = new InputListener() {
             @Override
             public void onMapTap(@NonNull Map map, @NonNull Point point) {
-                System.out.println(point.getLatitude() + "   " + point.getLongitude());
+                //
             }
 
             @Override
             public void onMapLongTap(@NonNull Map map, @NonNull Point point) {
-                LongTapDialog longTapDialog = new LongTapDialog();
-                latCurrent = point.getLatitude();
-                lonCurrent = point.getLongitude();
-                longTapDialog.show(getSupportFragmentManager(), "TAG");
-
-                PlacemarkMapObject mark = mapView.getMap().getMapObjects().addPlacemark(point);
-                mark.setOpacity(0.5f);
-                mark.setIcon(ImageProvider.fromResource(MainActivity.this, R.drawable.mark));
+                if (!routeIsBuilt) {
+                    LongTapDialog longTapDialog = new LongTapDialog();
+                    latCurrent = point.getLatitude();
+                    lonCurrent = point.getLongitude();
+                    longTapDialog.show(getSupportFragmentManager(), "TAG");
+                }
             }
         };
 
@@ -125,13 +145,13 @@ public class MainActivity extends AppCompatActivity implements LongTapDialog.Lon
     }
 
     private void collapsePanel() {
-        if (panelIsCollapsed) {
-            routePanel.setVisibility(View.GONE);
-            routePanelCollapser.setText(R.string.down_triangle);
-        } else {
-            routePanel.setVisibility(View.VISIBLE);
-            routePanelCollapser.setText(R.string.up_triangle);
-        }
+        routePanel.setVisibility(View.GONE);
+        routePanelCollapser.setText(R.string.down_triangle);
+    }
+
+    private void openPanel() {
+        routePanel.setVisibility(View.VISIBLE);
+        routePanelCollapser.setText(R.string.up_triangle);
     }
 
     public void setACoordinates() {
@@ -139,7 +159,19 @@ public class MainActivity extends AppCompatActivity implements LongTapDialog.Lon
         lonA = lonCurrent;
         tvLatA.setText(Double.toString(latA));
         tvLonA.setText(Double.toString(lonA));
-        if (!(tvLatB.getText().equals("") || tvLonB.getText().equals(""))) buttonBuildRoute.setVisibility(View.VISIBLE);
+        if (!(tvLatB.getText().equals("") || tvLonB.getText().equals(""))) {
+            panelIsCollapsed = false;
+            openPanel();
+            buttonBuildRoute.setVisibility(View.VISIBLE);
+        }
+        buttonClearRoute.setVisibility(View.VISIBLE);
+
+        if (markA != null) {
+            mapObjects.remove(markA);
+        }
+        markA = mapObjects.addPlacemark(new Point(latA, lonA));
+        markA.setOpacity(0.5f);
+        markA.setIcon(ImageProvider.fromResource(MainActivity.this, R.drawable.ic_a2));
     }
 
     public void setBCoordinates() {
@@ -147,7 +179,17 @@ public class MainActivity extends AppCompatActivity implements LongTapDialog.Lon
         lonB = lonCurrent;
         tvLatB.setText(Double.toString(latB));
         tvLonB.setText(Double.toString(lonB));
-        if (!(tvLatA.getText().equals("") || tvLonA.getText().equals(""))) buttonBuildRoute.setVisibility(View.VISIBLE);
+        if (!(tvLatA.getText().equals("") || tvLonA.getText().equals(""))) {
+            panelIsCollapsed = false;
+            openPanel();
+            buttonBuildRoute.setVisibility(View.VISIBLE);
+        }
+        buttonClearRoute.setVisibility(View.VISIBLE);
+
+        if (markB != null) mapObjects.remove(markB);
+        markB = mapObjects.addPlacemark(new Point(latB, lonB));
+        markB.setOpacity(0.5f);
+        markB.setIcon(ImageProvider.fromResource(MainActivity.this, R.drawable.ic_b2));
     }
 
     @Override
@@ -166,6 +208,11 @@ public class MainActivity extends AppCompatActivity implements LongTapDialog.Lon
     }
 
     private void buildRoute(Point pointA, Point pointB) {
+        routeIsBuilt = true;
+        panelIsCollapsed = true;
+        collapsePanel();
+        buttonBuildRoute.setVisibility(View.GONE);
+
         Point SCREEN_CENTER = new Point(
                 (pointA.getLatitude() + pointB.getLatitude()) / 2,
                 (pointA.getLongitude() + pointB.getLongitude()) / 2);
@@ -182,7 +229,7 @@ public class MainActivity extends AppCompatActivity implements LongTapDialog.Lon
 
     @Override
     public void onDrivingRoutes(@NonNull List<DrivingRoute> routes) {
-        mapObjects.addPolyline(routes.get(0).getGeometry());
+        route = mapObjects.addPolyline(routes.get(0).getGeometry());
     }
 
     @Override
@@ -195,8 +242,5 @@ public class MainActivity extends AppCompatActivity implements LongTapDialog.Lon
         }
 
         Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
-    }
-
-    private void submitRequest() {
     }
 }
